@@ -17,4 +17,7 @@ zipL (x:xs) (y:ys) = [x, y] : zipL xs ys
 -- Task 3
 multiZipL :: [[a]] -> [[a]]
 multiZipL [] = []
-multiZipL xss = [ head xs | xs <- xss ] : multiZipL (filter (not . null) (map (tail) xss))
+multiZipL xss | null nth  = []
+              | otherwise = [ head xs | xs <- xss' ] : multiZipL (map (tail) xss')
+        where xss' = filter (not . null) xss
+              nth = [ head xs | xs <- xss' ]
