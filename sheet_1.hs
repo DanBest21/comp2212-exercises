@@ -1,3 +1,6 @@
+import Parsing
+import System.IO
+
 -- Task 1
 zipLE :: [a] -> [a] -> [[a]]
 zipLE [] _ = []
@@ -21,3 +24,25 @@ multiZipL xss | null nth  = []
               | otherwise = [ head xs | xs <- xss' ] : multiZipL (map (tail) xss')
         where xss' = filter (not . null) xss
               nth = [ head xs | xs <- xss' ]
+
+-- Task 4
+valueExpr :: Parser Int
+valueExpr = do x <- integer
+               symbol ","
+               return x
+
+lastValueExpr :: Parser Int
+lastValueExpr = do x <- integer
+                   return x
+
+lineExpr :: Parser [Int]
+lineExpr = do xs <- many valueExpr
+              char '\n'
+              return xs
+
+listExpr :: Parser [[Int]]
+listExpr = do xss <- many lineExpr
+              return xss
+
+multiZipF :: String -> [[Int]]
+multiZipF s = listExpr s
