@@ -42,7 +42,7 @@ lineExpr = do xs <- many valueExpr
               return (xs ++ [x])
 
 listExpr :: Parser [[Int]]
-listExpr = do xss <- many lineExpr
+listExpr = do xss <- some lineExpr
               return xss
 
 convertToCSVLine :: [Int] -> String
@@ -56,4 +56,4 @@ multiZipF :: IO ()
 multiZipF = do csv <- readFile "test.csv"
                case parse listExpr csv of
                      [(res,rs)] -> writeFile "output.csv" (convertToCSV (multiZipL res))
-                     [] -> writeFile "output.csv" ""
+                     [] -> error "Failed to write CSV - check for any non-numeric values in the CSV file."
