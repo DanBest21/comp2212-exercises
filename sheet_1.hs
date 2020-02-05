@@ -1,5 +1,6 @@
 import Parsing
 import System.IO
+import Data.List
 
 -- Task 1
 zipLE :: [a] -> [a] -> [[a]]
@@ -37,12 +38,22 @@ lastValueExpr = do x <- integer
 
 lineExpr :: Parser [Int]
 lineExpr = do xs <- many valueExpr
-              char '\n'
-              return xs
+              x <- lastValueExpr
+              return (xs ++ [x])
 
 listExpr :: Parser [[Int]]
 listExpr = do xss <- many lineExpr
               return xss
 
-multiZipF :: String -> [[Int]]
-multiZipF s = listExpr s
+convertToCSVLine :: [Int] -> String
+convertToCSVLine xs = intercalate "," (map (show) xs)
+
+convertToCSV :: [[Int]] -> String
+convertToCSV []       = []
+convertToCSV (xs:xss) = (convertToCSVLine xs ++ "\n") ++ (convertToCSV xss)                    
+
+multiZipF :: IO ()
+multiZipF = do csv <- readFile "test.csv"
+               case parse listExpr csv of
+                     [(res,rs)] -> writeFile "output.csv" (convertToCSV (multiZipL res))
+                     [] -> writeFile "output.csv" ""
