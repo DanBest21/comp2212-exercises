@@ -76,23 +76,23 @@ type Byte = Word8
 -- The input type
 
 
+type AlexInput = (AlexPosn,     -- current position,
+                  Char,         -- previous char
+                  [Byte],       -- pending bytes on current char
+                  String)       -- current input string
 
+ignorePendingBytes :: AlexInput -> AlexInput
+ignorePendingBytes (p,c,_ps,s) = (p,c,[],s)
 
+alexInputPrevChar :: AlexInput -> Char
+alexInputPrevChar (_p,c,_bs,_s) = c
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+alexGetByte :: AlexInput -> Maybe (Byte,AlexInput)
+alexGetByte (p,c,(b:bs),s) = Just (b,(p,c,bs,s))
+alexGetByte (_,_,[],[]) = Nothing
+alexGetByte (p,_,[],(c:s))  = let p' = alexMove p c
+                                  (b:bs) = utf8Encode c
+                              in p' `seq`  Just (b, (p', c, bs, s))
 
 
 
@@ -165,16 +165,16 @@ type Byte = Word8
 -- assuming the usual eight character tab stops.
 
 
+data AlexPosn = AlexPn !Int !Int !Int
+        deriving (Eq,Show)
 
+alexStartPos :: AlexPosn
+alexStartPos = AlexPn 0 1 1
 
-
-
-
-
-
-
-
-
+alexMove :: AlexPosn -> Char -> AlexPosn
+alexMove (AlexPn a l c) '\t' = AlexPn (a+1)  l     (((c+alex_tab_size-1) `div` alex_tab_size)*alex_tab_size+1)
+alexMove (AlexPn a l _) '\n' = AlexPn (a+1) (l+1)   1
+alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
 
 
 -- -----------------------------------------------------------------------------
@@ -400,26 +400,26 @@ type Byte = Word8
 -- Basic wrapper
 
 
-type AlexInput = (Char,[Byte],String)
 
-alexInputPrevChar :: AlexInput -> Char
-alexInputPrevChar (c,_,_) = c
 
--- alexScanTokens :: String -> [token]
-alexScanTokens str = go ('\n',[],str)
-  where go inp__@(_,_bs,s) =
-          case alexScan inp__ 0 of
-                AlexEOF -> []
-                AlexError _ -> error "lexical error"
-                AlexSkip  inp__' _ln     -> go inp__'
-                AlexToken inp__' len act -> act (take len s) : go inp__'
 
-alexGetByte :: AlexInput -> Maybe (Byte,AlexInput)
-alexGetByte (c,(b:bs),s) = Just (b,(c,bs,s))
-alexGetByte (_,[],[])    = Nothing
-alexGetByte (_,[],(c:s)) = case utf8Encode c of
-                             (b:bs) -> Just (b, (c, bs, s))
-                             [] -> Nothing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -463,14 +463,14 @@ alexGetByte (_,[],(c:s)) = case utf8Encode c of
 -- Adds text positions to the basic model.
 
 
-
-
-
-
-
-
-
-
+--alexScanTokens :: String -> [token]
+alexScanTokens str0 = go (alexStartPos,'\n',[],str0)
+  where go inp__@(pos,_,_,str) =
+          case alexScan inp__ 0 of
+                AlexEOF -> []
+                AlexError ((AlexPn _ line column),_,_,_) -> error $ "lexical error at line " ++ (show line) ++ ", column " ++ (show column)
+                AlexSkip  inp__' _ln     -> go inp__'
+                AlexToken inp__' len act -> act pos (take len str) : go inp__'
 
 
 
@@ -3827,32 +3827,46 @@ alex_actions = array (0 :: Int, 15)
 -- Each action has type :: String -> Token 
 -- The token type: 
 data Token = 
-  TokenLet        | 
-  TokenIn         | 
-  TokenInt Int    |
-  TokenVar String | 
-  TokenEq         |
-  TokenPlus       |
-  TokenMinus      |
-  TokenTimes      |
-  TokenDiv        |
-  TokenLParen     |
-  TokenRParen     |
-  TokenExponent
+  TokenLet AlexPosn        | 
+  TokenIn AlexPosn         | 
+  TokenInt AlexPosn Int    |
+  TokenVar AlexPosn String | 
+  TokenEq AlexPosn         |
+  TokenPlus AlexPosn       |
+  TokenMinus AlexPosn      |
+  TokenTimes AlexPosn      |
+  TokenDiv AlexPosn        |
+  TokenLParen AlexPosn     |
+  TokenRParen AlexPosn     |
+  TokenExponent AlexPosn 
   deriving (Eq,Show)
 
-alex_action_2 =  \s -> TokenLet 
-alex_action_3 =  \s -> TokenIn 
-alex_action_4 =  \s -> TokenInt (read s) 
-alex_action_5 =  \s -> TokenEq 
-alex_action_6 =  \s -> TokenPlus 
-alex_action_7 =  \s -> TokenMinus 
-alex_action_8 =  \s -> TokenTimes 
-alex_action_9 =  \s -> TokenDiv 
-alex_action_10 =  \s -> TokenLParen 
-alex_action_11 =  \s -> TokenRParen 
-alex_action_12 =  \s -> TokenExponent 
-alex_action_13 =  \s -> TokenVar s 
+tokenPosn :: Token -> AlexPosn
+tokenPosn (TokenLet p) = p
+tokenPosn (TokenIn p) = p
+tokenPosn (TokenInt p _) = p
+tokenPosn (TokenVar p _) = p
+tokenPosn (TokenEq p) = p
+tokenPosn (TokenPlus p) = p
+tokenPosn (TokenMinus p) = p
+tokenPosn (TokenTimes p) = p
+tokenPosn (TokenDiv p) = p
+tokenPosn (TokenLParen p) = p
+tokenPosn (TokenRParen p) = p
+tokenPosn (TokenExponent p) = p
+
+alex_action_2 =  \p s -> TokenLet p 
+alex_action_3 =  \p s -> TokenIn p 
+alex_action_4 =  \p s -> TokenInt p (read s) 
+alex_action_5 =  \p s -> TokenEq p 
+alex_action_6 =  \p s -> TokenPlus p 
+alex_action_7 =  \p s -> TokenMinus p 
+alex_action_8 =  \p s -> TokenTimes p 
+alex_action_9 =  \p s -> TokenDiv p 
+alex_action_10 =  \p s -> TokenLParen p 
+alex_action_11 =  \p s -> TokenRParen p 
+alex_action_12 =  \p s -> TokenExponent p 
+alex_action_13 =  \p s -> TokenVar p s 
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
