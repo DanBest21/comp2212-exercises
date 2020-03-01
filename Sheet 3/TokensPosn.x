@@ -1,5 +1,5 @@
 { 
-module Tokens where 
+module TokensPosn where 
 }
 
 %wrapper "posn" 
@@ -42,17 +42,17 @@ data Token =
   TokenExponent AlexPosn 
   deriving (Eq,Show)
 
-tokenPosn :: Token -> AlexPosn
-tokenPosn (TokenLet p) = p
-tokenPosn (TokenIn p) = p
-tokenPosn (TokenInt p _) = p
-tokenPosn (TokenVar p _) = p
-tokenPosn (TokenEq p) = p
-tokenPosn (TokenPlus p) = p
-tokenPosn (TokenMinus p) = p
-tokenPosn (TokenTimes p) = p
-tokenPosn (TokenDiv p) = p
-tokenPosn (TokenLParen p) = p
-tokenPosn (TokenRParen p) = p
-tokenPosn (TokenExponent p) = p
+tokenPosn :: Token -> String
+tokenPosn (TokenLet (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenIn (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenInt (AlexPn _ x y) _) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenVar (AlexPn _ x y) _) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenEq (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenPlus (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenMinus (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenTimes (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenDiv (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenLParen (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenRParen (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
+tokenPosn (TokenExponent (AlexPn _ x y)) = show(x) ++ " " ++ show(y)
 }
