@@ -21,12 +21,16 @@ import MDLLexer
 
 %right if then else
 %right '?<' 
-%left forward left right  
+%left forward left right 
+%left ';' 
 %% 
-Exp : Action { $1 }
-    | Cond { $1 }
+Exp : Action { $1 : [] }
+    | Exp ';' Action { $3 : $1 }
 
-Action : forward Num ';' { Forward $2 }
+Action : forward Num { Forward $2 }
+       | left { RLeft }
+       | right { RRight }
+       | forward Num ';' { Forward $2 }
        | left ';' { RLeft }
        | right ';' { RRight }
        
@@ -43,11 +47,11 @@ parseError :: [MDLToken] -> a
 parseError ts = error errorMessage
     where lineCol = words (tokenPosn (last ts))
           errorMessage = "Parse error at line " ++ (lineCol !! 0) ++ ", column " ++ (lineCol !! 1)
+
 data Exp = Forward Int
          | RLeft
          | RRight
          | IfThenElse Check' Exp Exp
-         | Int Int
          deriving Show
 
 data Check' = Check Int
