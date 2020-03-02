@@ -1,1 +1,1 @@
-(5+7)^2
+forward 10; left; if ?< 3 then left; forward 1; right; else forward 3; left;
